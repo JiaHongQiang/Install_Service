@@ -213,6 +213,36 @@ list_deploy_packages() {
     
     print_title "新部署安装包列表"
     list_packages_by_keys "$package_dir" "${deploy_keys[@]}"
+    
+    # 显示配置文件（可选）
+    echo -e "${CYAN}配置文件（可选）:${NC}"
+    echo ""
+    
+    # 检查 nginx.conf
+    if [ -f "$package_dir/nginx.conf" ]; then
+        echo -e "  ${GREEN}✓${NC} nginx.conf"
+    else
+        echo -e "  ${YELLOW}○${NC} nginx.conf: 未找到（可选）"
+    fi
+    
+    # 检查 sdedb.sql
+    if [ -f "$package_dir/sdedb.sql" ]; then
+        echo -e "  ${GREEN}✓${NC} sdedb.sql"
+    else
+        echo -e "  ${YELLOW}○${NC} sdedb.sql: 未找到（可选）"
+    fi
+    
+    # 检查证书文件
+    local cert_files=("server.crt" "server.key" "root.crt")
+    for cert in "${cert_files[@]}"; do
+        if [ -f "$package_dir/$cert" ]; then
+            echo -e "  ${GREEN}✓${NC} $cert"
+        else
+            echo -e "  ${YELLOW}○${NC} $cert: 未找到（可选）"
+        fi
+    done
+    
+    echo ""
 }
 
 # 列出升级所需的包
@@ -248,6 +278,21 @@ list_upgrade_packages() {
     else
         echo -e "  ${RED}✗${NC} deploy_vim_web: 未找到 (在 deploy 目录)"
     fi
+    
+    echo ""
+    
+    # 显示证书文件（可选，从 deploy 目录读取）
+    echo -e "${CYAN}证书文件（可选，来自 deploy 目录）:${NC}"
+    echo ""
+    
+    local cert_files=("server.crt" "server.key" "root.crt")
+    for cert in "${cert_files[@]}"; do
+        if [ -f "$deploy_dir/$cert" ]; then
+            echo -e "  ${GREEN}✓${NC} $cert"
+        else
+            echo -e "  ${YELLOW}○${NC} $cert: 未找到（可选）"
+        fi
+    done
     
     echo ""
 }
