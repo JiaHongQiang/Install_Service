@@ -130,9 +130,6 @@ UPDATE t_forwarding_config SET
     MTN_AUDIO_NAT_PORT = $MTN_AUDIO_NAT_PORT
 WHERE NODE_ID = 1;
 
--- 配置t_mtn_nat_config
-UPDATE t_mtn_nat_config SET MTN_NAT_IP = '$PUBLIC_IP' WHERE NODE_ID = 1;
-
 -- 配置t_punch_client_config
 DELETE FROM t_punch_client_config WHERE SIE_IP = '0.0.0.0' AND PUNCH_IP = '0.0.0.0' AND PUNCH_PORT = 9009;
 INSERT INTO t_punch_client_config (SIE_IP, PUNCH_IP, PUNCH_PORT) VALUES ('$PUBLIC_IP', '$PUBLIC_IP', $PUNCH_PORT);
@@ -158,31 +155,27 @@ EOF
         echo ""
         
         echo -e "${CYAN}>>> t_domain_info <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_domain_info WHERE DOMAIN_ID = 1;" 2>/dev/null
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_domain_info;" 2>/dev/null
         echo ""
         
         echo -e "${CYAN}>>> t_cmg_listen <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_cmg_listen WHERE NODE_ID = 1;" 2>/dev/null
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_cmg_listen;" 2>/dev/null
         echo ""
         
         echo -e "${CYAN}>>> t_forwarding_config <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_forwarding_config WHERE NODE_ID = 1;" 2>/dev/null
-        echo ""
-        
-        echo -e "${CYAN}>>> t_mtn_nat_config <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_mtn_nat_config WHERE NODE_ID = 1;" 2>/dev/null
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_forwarding_config;" 2>/dev/null
         echo ""
         
         echo -e "${CYAN}>>> t_punch_client_config <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_punch_client_config ORDER BY PUNCH_PORT DESC LIMIT 1;" 2>/dev/null
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_punch_client_config;" 2>/dev/null
         echo ""
         
         echo -e "${CYAN}>>> vss_domain_info <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM vss_domain_info WHERE ID = 1;" 2>/dev/null
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM vss_domain_info;" 2>/dev/null
         echo ""
         
         echo -e "${CYAN}>>> vss_proxy_address <<<${NC}"
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM vss_proxy_address LIMIT 1;" 2>/dev/null
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM vss_proxy_address;" 2>/dev/null
         
     else
         log_error "数据库配置失败，请检查错误信息"
