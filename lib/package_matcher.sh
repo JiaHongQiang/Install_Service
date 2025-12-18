@@ -29,6 +29,40 @@ PACKAGE_PATTERNS=(
     ["install_file_server"]="install_hy_file_server_*.bin"
 )
 
+# 获取文件修改时间（格式化输出）
+# 参数: $1=文件路径
+get_file_time() {
+    local file_path="$1"
+    
+    if [ ! -f "$file_path" ]; then
+        echo "未知"
+        return
+    fi
+    
+    # 尝试 Linux 格式
+    local file_time=$(stat -c "%Y" "$file_path" 2>/dev/null)
+    
+    # 尝试 macOS 格式
+    if [ -z "$file_time" ]; then
+        file_time=$(stat -f "%m" "$file_path" 2>/dev/null)
+    fi
+    
+    if [ -n "$file_time" ]; then
+        # 尝试 Linux date 格式
+        local time_str=$(date -d "@$file_time" "+%Y-%m-%d %H:%M" 2>/dev/null)
+        # 尝试 macOS date 格式
+        if [ -z "$time_str" ]; then
+            time_str=$(date -r "$file_time" "+%Y-%m-%d %H:%M" 2>/dev/null)
+        fi
+        if [ -n "$time_str" ]; then
+            echo "$time_str"
+            return
+        fi
+    fi
+    
+    echo "未知"
+}
+
 # 从文件名提取版本号
 # 参数: $1=文件名
 # 返回: 版本号字符串
@@ -196,7 +230,17 @@ list_packages_by_keys() {
         local found=$(find "$package_dir" -maxdepth 1 -type f -name "$pattern" 2>/dev/null | head -1)
         
         if [ -n "$found" ]; then
-            echo -e "  ${GREEN}✓${NC} $key: $(basename "$found")"
+            # 获取文件修改时间
+            local file_time=$(stat -c "%Y" "$found" 2>/dev/null || stat -f "%m" "$found" 2>/dev/null)
+            local time_str=""
+            if [ -n "$file_time" ]; then
+                time_str=$(date -d "@$file_time" "+%Y-%m-%d %H:%M" 2>/dev/null || date -r "$file_time" "+%Y-%m-%d %H:%M" 2>/dev/null)
+            fi
+            if [ -n "$time_str" ]; then
+                echo -e "  ${GREEN}✓${NC} $key: $(basename "$found") ${YELLOW}[$time_str]${NC}"
+            else
+                echo -e "  ${GREEN}✓${NC} $key: $(basename "$found")"
+            fi
         else
             echo -e "  ${RED}✗${NC} $key: 未找到"
         fi
@@ -220,14 +264,16 @@ list_deploy_packages() {
     
     # 检查 nginx.conf
     if [ -f "$package_dir/nginx.conf" ]; then
-        echo -e "  ${GREEN}✓${NC} nginx.conf"
+        local nginx_time=$(get_file_time "$package_dir/nginx.conf")
+        echo -e "  ${GREEN}✓${NC} nginx.conf ${YELLOW}[$nginx_time]${NC}"
     else
         echo -e "  ${YELLOW}○${NC} nginx.conf: 未找到（可选）"
     fi
     
     # 检查 sdedb.sql
     if [ -f "$package_dir/sdedb.sql" ]; then
-        echo -e "  ${GREEN}✓${NC} sdedb.sql"
+        local sql_time=$(get_file_time "$package_dir/sdedb.sql")
+        echo -e "  ${GREEN}✓${NC} sdedb.sql ${YELLOW}[$sql_time]${NC}"
     else
         echo -e "  ${YELLOW}○${NC} sdedb.sql: 未找到（可选）"
     fi
@@ -236,7 +282,8 @@ list_deploy_packages() {
     local cert_files=("server.crt" "server.key" "root.crt")
     for cert in "${cert_files[@]}"; do
         if [ -f "$package_dir/$cert" ]; then
-            echo -e "  ${GREEN}✓${NC} $cert"
+            local cert_time=$(get_file_time "$package_dir/$cert")
+            echo -e "  ${GREEN}✓${NC} $cert ${YELLOW}[$cert_time]${NC}"
         else
             echo -e "  ${YELLOW}○${NC} $cert: 未找到（可选）"
         fi
