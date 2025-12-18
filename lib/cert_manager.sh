@@ -146,7 +146,8 @@ create_ssl_password_file() {
     echo "$SSL_PASSWORD" > "$password_file"
     
     if [ $? -eq 0 ]; then
-        # 设置权限
+        # 设置所有者为 hy:hy
+        chown hy:hy "$password_file"
         chmod 600 "$password_file"
         log_success "SSL 密码文件创建成功"
         return 0
