@@ -90,6 +90,46 @@ upgrade_package() {
     return 0
 }
 
+# 显示升级菜单并让用户选择
+show_upgrade_menu() {
+    echo ""
+    echo -e "${CYAN}请选择要升级的服务（输入数字，多个用空格分隔，输入 a 全选，输入 0 退出）:${NC}"
+    echo ""
+    
+    local index=1
+    local available_upgrades=()
+    
+    for install_info in "${UPGRADE_ORDER[@]}"; do
+        IFS=':' read -r package_key description extra_args <<< "$install_info"
+        
+        # 检查包是否存在
+        local search_dir="$UPDATE_PACKAGES_DIR"
+        if [[ "$package_key" == deploy_* ]]; then
+            search_dir="$DEPLOY_PACKAGES_DIR"
+        fi
+        
+        local package_path
+        package_path=$(find_package "$search_dir" "$package_key" 2>/dev/null)
+        
+        if [ -n "$package_path" ]; then
+            echo -e "  ${GREEN}$index.${NC} $description ($package_key) - $(basename "$package_path")"
+            available_upgrades+=("$install_info")
+        else
+            echo -e "  ${YELLOW}$index.${NC} $description ($package_key) - ${RED}未找到安装包${NC}"
+        fi
+        
+        ((index++))
+    done
+    
+    echo ""
+    echo -e "  ${YELLOW}a.${NC} 全选可用的升级包"
+    echo -e "  ${YELLOW}0.${NC} 退出升级"
+    echo ""
+    
+    # 返回可用升级列表
+    printf '%s\n' "${available_upgrades[@]}"
+}
+
 # 执行升级
 run_upgrade() {
     print_title "开始升级安装"
@@ -100,12 +140,6 @@ run_upgrade() {
     # 初始化目录
     init_directories
     
-    # 检查安装包
-    log_info "检查升级包..."
-    if ! check_upgrade_packages "$UPDATE_PACKAGES_DIR"; then
-        die "升级包检查失败，请确保所有必要的升级包都已放置在 $UPDATE_PACKAGES_DIR 目录"
-    fi
-    
     # 显示当前服务状态
     log_info "检查当前服务状态..."
     check_upgrade_services
@@ -113,16 +147,129 @@ run_upgrade() {
     # 显示安装包列表
     list_upgrade_packages "$UPDATE_PACKAGES_DIR" "$DEPLOY_PACKAGES_DIR"
     
-    # 确认升级
+    # 升级说明
     echo ""
     log_info "升级说明："
     echo -e "  ${CYAN}• 升级包自带自动备份功能，无需手动备份${NC}"
     echo -e "  ${CYAN}• 升级过程中服务可能会短暂中断${NC}"
+    echo -e "  ${CYAN}• 您可以选择升级部分或全部服务${NC}"
+    
+    # 收集可用的升级包
+    local available_upgrades=()
+    for install_info in "${UPGRADE_ORDER[@]}"; do
+        IFS=':' read -r package_key description extra_args <<< "$install_info"
+        
+        local search_dir="$UPDATE_PACKAGES_DIR"
+        if [[ "$package_key" == deploy_* ]]; then
+            search_dir="$DEPLOY_PACKAGES_DIR"
+        fi
+        
+        local package_path
+        package_path=$(find_package "$search_dir" "$package_key" 2>/dev/null)
+        
+        if [ -n "$package_path" ]; then
+            available_upgrades+=("$install_info")
+        fi
+    done
+    
+    # 检查是否有可用的升级包
+    if [ ${#available_upgrades[@]} -eq 0 ]; then
+        log_warn "未找到任何可用的升级包"
+        log_info "请将升级包放置到以下目录："
+        echo -e "  ${CYAN}升级包:${NC} $UPDATE_PACKAGES_DIR"
+        echo -e "  ${CYAN}VIM_Web:${NC} $DEPLOY_PACKAGES_DIR"
+        return 1
+    fi
+    
+    # 显示升级选项菜单
+    echo ""
+    echo -e "${CYAN}请选择要升级的服务:${NC}"
     echo ""
     
-    if ! confirm "确认开始升级安装？"; then
+    local index=1
+    for install_info in "${UPGRADE_ORDER[@]}"; do
+        IFS=':' read -r package_key description extra_args <<< "$install_info"
+        
+        local search_dir="$UPDATE_PACKAGES_DIR"
+        if [[ "$package_key" == deploy_* ]]; then
+            search_dir="$DEPLOY_PACKAGES_DIR"
+        fi
+        
+        local package_path
+        package_path=$(find_package "$search_dir" "$package_key" 2>/dev/null)
+        
+        if [ -n "$package_path" ]; then
+            echo -e "  ${GREEN}$index.${NC} $description - $(basename "$package_path")"
+        else
+            echo -e "  ${YELLOW}$index.${NC} $description - ${RED}未找到${NC}"
+        fi
+        
+        ((index++))
+    done
+    
+    echo ""
+    echo -e "  ${GREEN}a.${NC} 升级所有可用的服务"
+    echo -e "  ${YELLOW}0.${NC} 退出"
+    echo ""
+    
+    # 读取用户选择
+    echo -n "请输入选择（多个用空格分隔）: "
+    read -r user_choice
+    
+    if [ "$user_choice" = "0" ] || [ -z "$user_choice" ]; then
         log_info "用户取消升级"
-        exit 0
+        return 0
+    fi
+    
+    # 确定要升级的项目
+    local selected_upgrades=()
+    
+    if [ "$user_choice" = "a" ] || [ "$user_choice" = "A" ]; then
+        # 全选
+        selected_upgrades=("${available_upgrades[@]}")
+        log_info "已选择升级所有可用服务"
+    else
+        # 解析用户选择
+        for choice in $user_choice; do
+            if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le ${#UPGRADE_ORDER[@]} ]; then
+                local selected_info="${UPGRADE_ORDER[$((choice-1))]}"
+                IFS=':' read -r package_key description extra_args <<< "$selected_info"
+                
+                # 检查是否可用
+                local search_dir="$UPDATE_PACKAGES_DIR"
+                if [[ "$package_key" == deploy_* ]]; then
+                    search_dir="$DEPLOY_PACKAGES_DIR"
+                fi
+                
+                local package_path
+                package_path=$(find_package "$search_dir" "$package_key" 2>/dev/null)
+                
+                if [ -n "$package_path" ]; then
+                    selected_upgrades+=("$selected_info")
+                else
+                    log_warn "$description 的安装包不存在，跳过"
+                fi
+            fi
+        done
+    fi
+    
+    if [ ${#selected_upgrades[@]} -eq 0 ]; then
+        log_warn "未选择任何有效的升级项"
+        return 0
+    fi
+    
+    # 确认升级
+    echo ""
+    log_info "将升级以下服务："
+    for info in "${selected_upgrades[@]}"; do
+        IFS=':' read -r package_key description extra_args <<< "$info"
+        echo -e "  ${CYAN}•${NC} $description"
+    done
+    echo ""
+    
+    if ! confirm "确认开始升级？"; then
+        log_info "用户取消升级"
+        return 0
     fi
     
     echo ""
@@ -130,13 +277,8 @@ run_upgrade() {
     echo ""
     
     local failed=0
-    local install_info
-    local package_key
-    local description
-    local extra_args
     
-    for install_info in "${UPGRADE_ORDER[@]}"; do
-        # 解析安装信息
+    for install_info in "${selected_upgrades[@]}"; do
         IFS=':' read -r package_key description extra_args <<< "$install_info"
         
         if ! upgrade_package "$package_key" "$description" "$extra_args"; then
@@ -158,7 +300,7 @@ run_upgrade() {
     if [ $failed -gt 0 ]; then
         log_warn "升级过程中有 $failed 个组件失败"
     else
-        log_success "所有组件升级成功"
+        log_success "所有选择的组件升级成功"
     fi
     
     # 等待服务启动
