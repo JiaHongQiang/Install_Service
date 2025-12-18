@@ -118,6 +118,26 @@ UPGRADE_ORDER=(
 )
 
 # ===========================
+# 网络配置默认值
+# ===========================
+
+# MySQL 连接默认值（用于网络配置）
+DEFAULT_MYSQL_HOST="localhost"
+DEFAULT_MYSQL_PORT="3306"
+DEFAULT_MYSQL_USER="root"
+
+# 端口默认值
+DEFAULT_MTN_NAT_PORT="9012"
+DEFAULT_MTN_VIDEO_NAT_PORT="9500"
+DEFAULT_MTN_AUDIO_NAT_PORT="9501"
+DEFAULT_PUNCH_PORT="9009"
+DEFAULT_SIE_NAT_PORT="9001"
+DEFAULT_PROXY_PORT="9001"
+DEFAULT_PROXY_TLS_PORT="9003"
+DEFAULT_PROXY_HTTP_PORT="9200"
+DEFAULT_PROXY_HTTPS_PORT="1443"
+
+# ===========================
 # 函数：初始化目录
 # ===========================
 init_directories() {
