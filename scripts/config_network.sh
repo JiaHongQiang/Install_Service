@@ -158,8 +158,26 @@ EOF
         echo ""
         
         mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "
-            SELECT 'vss_domain_info' AS '表名', SIE_IP, SIE_NAT_PORT FROM vss_domain_info WHERE ID = 1;
-            SELECT 'vss_proxy_address' AS '表名', PROXY_ADDR, PROXY_PORT, PROXY_TLS_PORT FROM vss_proxy_address LIMIT 1;
+            SELECT '>>> t_domain_info <<<' AS '';
+            SELECT DOMAIN_ID, DOMAIN_NAT_IP FROM t_domain_info WHERE DOMAIN_ID = 1;
+            
+            SELECT '>>> t_cmg_listen <<<' AS '';
+            SELECT NODE_ID, CMG_NAT_IPADDR FROM t_cmg_listen WHERE NODE_ID = 1;
+            
+            SELECT '>>> t_forwarding_config <<<' AS '';
+            SELECT NODE_ID, MTN_NAT_IP, MTN_NAT_PORT, MTN_VIDEO_NAT_PORT, MTN_AUDIO_NAT_PORT FROM t_forwarding_config WHERE NODE_ID = 1;
+            
+            SELECT '>>> t_mtn_nat_config <<<' AS '';
+            SELECT NODE_ID, MTN_NAT_IP FROM t_mtn_nat_config WHERE NODE_ID = 1;
+            
+            SELECT '>>> t_punch_client_config <<<' AS '';
+            SELECT SIE_IP, PUNCH_IP, PUNCH_PORT FROM t_punch_client_config ORDER BY PUNCH_PORT DESC LIMIT 1;
+            
+            SELECT '>>> vss_domain_info <<<' AS '';
+            SELECT ID, SIE_IP, SIE_NAT_PORT FROM vss_domain_info WHERE ID = 1;
+            
+            SELECT '>>> vss_proxy_address <<<' AS '';
+            SELECT PROXY_ADDR, PROXY_PORT, PROXY_TLS_PORT, PROXY_HTTP_PORT, PROXY_HTTPS_PORT FROM vss_proxy_address LIMIT 1;
         " 2>/dev/null
         
     else
