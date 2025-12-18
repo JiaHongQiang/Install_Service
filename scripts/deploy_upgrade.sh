@@ -199,7 +199,8 @@ run_upgrade() {
         package_path=$(find_package "$search_dir" "$package_key" 2>/dev/null)
         
         if [ -n "$package_path" ]; then
-            echo -e "  ${GREEN}$index.${NC} $description - $(basename "$package_path")"
+            local file_time=$(get_file_time "$package_path")
+            echo -e "  ${GREEN}$index.${NC} $description - $(basename "$package_path") ${YELLOW}[$file_time]${NC}"
         else
             echo -e "  ${YELLOW}$index.${NC} $description - ${RED}未找到${NC}"
         fi
