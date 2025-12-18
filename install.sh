@@ -66,25 +66,16 @@ show_menu() {
 
 # 查看可用安装包
 list_all_packages() {
-    print_title "可用安装包"
-    
-    echo -e "${CYAN}新部署安装包 ($DEPLOY_PACKAGES_DIR):${NC}"
-    echo ""
-    
     if [ -d "$DEPLOY_PACKAGES_DIR" ]; then
-        list_available_packages "$DEPLOY_PACKAGES_DIR"
+        list_deploy_packages "$DEPLOY_PACKAGES_DIR"
     else
-        echo -e "  ${YELLOW}目录不存在，请先初始化目录结构${NC}"
+        echo -e "  ${YELLOW}新部署目录不存在，请先初始化目录结构${NC}"
     fi
     
-    echo ""
-    echo -e "${CYAN}升级安装包 ($UPDATE_PACKAGES_DIR):${NC}"
-    echo ""
-    
     if [ -d "$UPDATE_PACKAGES_DIR" ]; then
-        list_available_packages "$UPDATE_PACKAGES_DIR"
+        list_upgrade_packages "$UPDATE_PACKAGES_DIR" "$DEPLOY_PACKAGES_DIR"
     else
-        echo -e "  ${YELLOW}目录不存在，请先初始化目录结构${NC}"
+        echo -e "  ${YELLOW}升级目录不存在，请先初始化目录结构${NC}"
     fi
 }
 
