@@ -53,14 +53,46 @@ DATABASE_NAME="sdedb"
 DB_SCRIPT_NAME="sdedb.sql"
 
 # ===========================
+# Nginx 配置
+# ===========================
+
+# Nginx 配置文件名（放在 deploy 目录）
+NGINX_CONF_NAME="nginx.conf"
+
+# Nginx 配置目标目录
+NGINX_CONF_DIR="/opt/nginx/conf"
+
+# SSL 密码文件内容
+SSL_PASSWORD="123456"
+
+# SSL 密码文件名
+SSL_PASSWORD_FILE="ssl_password_file"
+
+# ===========================
+# 证书配置
+# ===========================
+
+# 证书文件名列表
+CERT_FILES=("server.crt" "server.key" "root.crt")
+
+# 证书目标目录1：Nginx配置目录
+CERT_DEST_NGINX="/opt/nginx/conf"
+
+# 证书目标目录2：媒体服务器
+CERT_DEST_MEDIA="/home/hy_media_server/bin"
+
+# 证书目标目录3：VSS服务器（仅root.crt）
+CERT_DEST_VSS="/home/hy_vss_biz_server/conf"
+
+# ===========================
 # 服务配置
 # ===========================
 
 # 新部署需要检查的服务列表
-DEPLOY_SERVICES=("sie" "vss" "lkdc" "hy_message_push_server" "hy_file_server")
+DEPLOY_SERVICES=("sie" "vss" "lkdc" "hy_message_push_server" "hy_file_server" "nginxd")
 
 # 升级需要检查的服务列表
-UPGRADE_SERVICES=("sie" "vss" "lkdc")
+UPGRADE_SERVICES=("sie" "vss" "lkdc" "nginxd")
 
 # ===========================
 # 安装顺序配置

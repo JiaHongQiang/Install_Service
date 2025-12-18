@@ -17,6 +17,7 @@ SERVICES=(
     "lkdc:LKDC服务"
     "hy_message_push_server:消息推送服务"
     "hy_file_server:文件服务"
+    "nginxd:Nginx服务"
 )
 
 # 检查单个服务状态
@@ -208,11 +209,11 @@ restart_service() {
 # 新部署后检查服务
 check_deploy_services() {
     log_info "检查新部署的服务状态..."
-    check_specified_services "sie" "vss" "lkdc" "hy_message_push_server" "hy_file_server"
+    check_specified_services "sie" "vss" "lkdc" "hy_message_push_server" "hy_file_server" "nginxd"
 }
 
 # 升级后检查服务
 check_upgrade_services() {
     log_info "检查升级后的服务状态..."
-    check_specified_services "sie" "vss" "lkdc"
+    check_specified_services "sie" "vss" "lkdc" "nginxd"
 }

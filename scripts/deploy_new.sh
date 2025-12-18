@@ -13,6 +13,7 @@ source "$PROJECT_ROOT/config.sh"
 source "$PROJECT_ROOT/lib/common.sh"
 source "$PROJECT_ROOT/lib/package_matcher.sh"
 source "$PROJECT_ROOT/lib/service_checker.sh"
+source "$PROJECT_ROOT/lib/cert_manager.sh"
 
 # 安装单个包
 # 参数: $1=包类型key, $2=描述, $3=额外参数
@@ -220,9 +221,20 @@ run_deploy() {
     # 检查服务状态
     check_deploy_services
     
+    # 部署 Nginx 配置和证书
+    print_separator
+    deploy_nginx_config "$DEPLOY_PACKAGES_DIR"
+    
+    print_separator
+    deploy_certificates "$DEPLOY_PACKAGES_DIR"
+    
     # 导入数据库脚本
     print_separator
     import_database
+    
+    # 最终服务状态检查
+    print_title "最终服务状态检查"
+    check_deploy_services
     
     return $failed
 }

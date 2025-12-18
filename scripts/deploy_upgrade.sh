@@ -13,6 +13,7 @@ source "$PROJECT_ROOT/config.sh"
 source "$PROJECT_ROOT/lib/common.sh"
 source "$PROJECT_ROOT/lib/package_matcher.sh"
 source "$PROJECT_ROOT/lib/service_checker.sh"
+source "$PROJECT_ROOT/lib/cert_manager.sh"
 
 # 安装单个升级包
 # 参数: $1=包类型key, $2=描述, $3=额外参数
@@ -165,6 +166,14 @@ run_upgrade() {
     sleep 5
     
     # 检查服务状态
+    check_upgrade_services
+    
+    # 更新证书（可选，证书放在 deploy 目录，新旧共用）
+    print_separator
+    upgrade_certificates "$DEPLOY_PACKAGES_DIR"
+    
+    # 最终服务状态检查
+    print_title "最终服务状态检查"
     check_upgrade_services
     
     return $failed
