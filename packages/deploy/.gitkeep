@@ -1,0 +1,6 @@
+# 此目录存放新部署安装包
+# 包括：
+# - 安装包文件 (.run, .bin)
+# - nginx.conf 配置文件
+# - sdedb.sql 数据库脚本
+# - 证书文件 (server.crt, server.key, root.crt)

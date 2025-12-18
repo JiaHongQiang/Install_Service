@@ -1,0 +1,7 @@
+# 此目录存放升级安装包
+# 包括：
+# - update_sie_*.run
+# - update_vss_*.run
+# - install-lkdc-*.bin
+# 注意：deploy_vim_web 使用 deploy 目录的包
+#       证书也从 deploy 目录读取
