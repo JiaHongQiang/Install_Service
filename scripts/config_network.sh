@@ -157,28 +157,26 @@ EOF
         log_info "验证配置结果..."
         echo ""
         
-        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "
-            SELECT '>>> t_domain_info <<<' AS '';
-            SELECT DOMAIN_ID, DOMAIN_NAT_IP FROM t_domain_info WHERE DOMAIN_ID = 1;
-            
-            SELECT '>>> t_cmg_listen <<<' AS '';
-            SELECT NODE_ID, CMG_NAT_IPADDR FROM t_cmg_listen WHERE NODE_ID = 1;
-            
-            SELECT '>>> t_forwarding_config <<<' AS '';
-            SELECT NODE_ID, MTN_NAT_IP, MTN_NAT_PORT, MTN_VIDEO_NAT_PORT, MTN_AUDIO_NAT_PORT FROM t_forwarding_config WHERE NODE_ID = 1;
-            
-            SELECT '>>> t_mtn_nat_config <<<' AS '';
-            SELECT NODE_ID, MTN_NAT_IP FROM t_mtn_nat_config WHERE NODE_ID = 1;
-            
-            SELECT '>>> t_punch_client_config <<<' AS '';
-            SELECT SIE_IP, PUNCH_IP, PUNCH_PORT FROM t_punch_client_config ORDER BY PUNCH_PORT DESC LIMIT 1;
-            
-            SELECT '>>> vss_domain_info <<<' AS '';
-            SELECT ID, SIE_IP, SIE_NAT_PORT FROM vss_domain_info WHERE ID = 1;
-            
-            SELECT '>>> vss_proxy_address <<<' AS '';
-            SELECT PROXY_ADDR, PROXY_PORT, PROXY_TLS_PORT, PROXY_HTTP_PORT, PROXY_HTTPS_PORT FROM vss_proxy_address LIMIT 1;
-        " 2>/dev/null
+        echo -e "${CYAN}>>> t_domain_info <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_domain_info WHERE DOMAIN_ID = 1 \G" 2>/dev/null
+        
+        echo -e "${CYAN}>>> t_cmg_listen <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_cmg_listen WHERE NODE_ID = 1 \G" 2>/dev/null
+        
+        echo -e "${CYAN}>>> t_forwarding_config <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_forwarding_config WHERE NODE_ID = 1 \G" 2>/dev/null
+        
+        echo -e "${CYAN}>>> t_mtn_nat_config <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_mtn_nat_config WHERE NODE_ID = 1 \G" 2>/dev/null
+        
+        echo -e "${CYAN}>>> t_punch_client_config <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM t_punch_client_config ORDER BY PUNCH_PORT DESC LIMIT 1 \G" 2>/dev/null
+        
+        echo -e "${CYAN}>>> vss_domain_info <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM vss_domain_info WHERE ID = 1 \G" 2>/dev/null
+        
+        echo -e "${CYAN}>>> vss_proxy_address <<<${NC}"
+        mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" -e "SELECT * FROM vss_proxy_address LIMIT 1 \G" 2>/dev/null
         
     else
         log_error "数据库配置失败，请检查错误信息"
