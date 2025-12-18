@@ -34,10 +34,26 @@ copy_cert_file() {
     fi
 }
 
-# 部署证书
+# 部署证书（可选）
 # 参数: $1=证书源目录
+# 说明: 如果没有证书文件则跳过，不影响主流程
 deploy_certificates() {
     local cert_dir="$1"
+    
+    # 先检查是否有任何证书文件
+    local has_certs=false
+    for cert_file in "${CERT_FILES[@]}"; do
+        if [ -f "$cert_dir/$cert_file" ]; then
+            has_certs=true
+            break
+        fi
+    done
+    
+    # 没有证书文件，直接跳过
+    if [ "$has_certs" = false ]; then
+        log_info "未找到任何证书文件，跳过证书部署"
+        return 0  # 返回0表示成功，不影响主流程
+    fi
     
     print_title "部署证书文件"
     
@@ -48,7 +64,7 @@ deploy_certificates() {
         local src_file="$cert_dir/$cert_file"
         
         if [ ! -f "$src_file" ]; then
-            log_warn "证书文件不存在: $src_file，跳过"
+            log_info "证书文件 $cert_file 不存在，跳过"
             continue
         fi
         
@@ -79,39 +95,38 @@ deploy_certificates() {
     done
     
     echo ""
-    if [ $failed -eq 0 ] && [ $success -gt 0 ]; then
+    if [ $success -gt 0 ]; then
         log_success "证书部署完成，共复制 $success 个文件"
-        return 0
-    elif [ $success -eq 0 ]; then
-        log_warn "未找到任何证书文件"
-        return 1
-    else
-        log_warn "证书部署完成，成功 $success 个，失败 $failed 个"
-        return 1
     fi
+    if [ $failed -gt 0 ]; then
+        log_warn "有 $failed 个文件复制失败"
+    fi
+    
+    return 0  # 始终返回0，不影响主流程
 }
 
-# 部署 Nginx 配置文件
+# 部署 Nginx 配置文件（可选）
 # 参数: $1=配置文件源目录
+# 说明: 如果配置文件不存在则跳过，不影响主流程
 deploy_nginx_config() {
     local src_dir="$1"
     local src_file="$src_dir/$NGINX_CONF_NAME"
     
-    print_title "部署 Nginx 配置"
-    
-    # 检查源文件是否存在
+    # 检查源文件是否存在，不存在则跳过
     if [ ! -f "$src_file" ]; then
-        log_warn "Nginx 配置文件不存在: $src_file"
-        return 1
+        log_info "未找到 Nginx 配置文件 ($NGINX_CONF_NAME)，跳过 Nginx 配置部署"
+        return 0  # 返回0表示成功，不影响主流程
     fi
+    
+    print_title "部署 Nginx 配置"
     
     log_info "找到 Nginx 配置文件: $src_file"
     log_info "目标目录: $NGINX_CONF_DIR"
     
     # 检查目标目录
     if [ ! -d "$NGINX_CONF_DIR" ]; then
-        log_warn "Nginx 配置目录不存在: $NGINX_CONF_DIR"
-        return 1
+        log_warn "Nginx 配置目录不存在: $NGINX_CONF_DIR，跳过"
+        return 0
     fi
     
     # 复制配置文件
@@ -119,7 +134,7 @@ deploy_nginx_config() {
         log_success "Nginx 配置文件已复制到 $NGINX_CONF_DIR"
     else
         log_error "Nginx 配置文件复制失败"
-        return 1
+        return 0  # 即使失败也不影响主流程
     fi
     
     # 创建 SSL 密码文件
