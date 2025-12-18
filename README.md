@@ -9,6 +9,9 @@
 - ✅ 交互式菜单和命令行参数两种使用方式
 - ✅ 安装完成后自动检查服务状态
 - ✅ 彩色日志输出，便于查看安装进度
+- ✅ 升级时可选择升级特定服务
+- ✅ Nginx 配置和证书自动部署（可选）
+- ✅ 数据库内外网配置工具
 
 ## 目录结构
 
@@ -20,10 +23,12 @@ Install_Service/
 ├── lib/
 │   ├── package_matcher.sh         # 包名模糊匹配模块
 │   ├── service_checker.sh         # 服务状态检查模块
+│   ├── cert_manager.sh            # 证书和Nginx配置管理
 │   └── common.sh                  # 公共函数库
 ├── scripts/
 │   ├── deploy_new.sh              # 新部署脚本
-│   └── deploy_upgrade.sh          # 升级安装脚本
+│   ├── deploy_upgrade.sh          # 升级安装脚本
+│   └── config_network.sh          # 数据库内外网配置
 ├── logs/                          # 日志目录（自动创建）
 ├── install.sh                     # 主入口脚本
 ├── config.sh                      # 配置文件
@@ -46,7 +51,7 @@ chmod +x install.sh scripts/*.sh lib/*.sh
 
 ```bash
 ./install.sh
-# 选择 5. 初始化目录结构
+# 选择 6. 初始化目录结构
 ```
 
 ### 3. 放置安装包
@@ -54,21 +59,29 @@ chmod +x install.sh scripts/*.sh lib/*.sh
 将安装包放置到对应目录：
 
 **新部署安装包** (`packages/deploy/`)：
-- `deploy_basic_suse*.run`
-- `deploy_sie_*_mysql_*.run`
-- `deploy_vss_*_mysql_*.run`
-- `deploy_vim_web_*.run`
-- `install-lkdc-*.bin`
-- `install_hy_message_push_server_*.bin`
-- `install_hy_file_server_*.bin`
-- `sdedb.sql` - 数据库脚本（安装完成后自动导入）
+
+| 文件 | 说明 |
+|------|------|
+| `deploy_basic_suse*.run` | 基础环境包 |
+| `deploy_sie_*_mysql_*.run` | SIE 服务 |
+| `deploy_vss_*_mysql_*.run` | VSS 服务 |
+| `deploy_vim_web_*.run` | VIM_Web 服务 |
+| `install-lkdc-*.bin` | LKDC 服务 |
+| `install_hy_message_push_server_*.bin` | 消息推送服务 |
+| `install_hy_file_server_*.bin` | 文件服务 |
+| `sdedb.sql` | 数据库脚本（可选） |
+| `nginx.conf` | Nginx 配置（可选） |
+| `server.crt`, `server.key`, `root.crt` | 证书文件（可选） |
 
 **升级安装包** (`packages/update/`)：
-- `update_sie_*_mysql_*.run`
-- `update_vss_*_mysql_*.run`
-- `install-lkdc-*.bin`
 
-> **注意**：升级时 VIM_Web 使用 `packages/deploy/` 目录下的 `deploy_vim_web_*.run`（新旧部署共用同一个包）
+| 文件 | 说明 |
+|------|------|
+| `update_sie_*_mysql_*.run` | SIE 升级包 |
+| `update_vss_*_mysql_*.run` | VSS 升级包 |
+| `install-lkdc-*.bin` | LKDC 升级包 |
+
+> **注意**：升级时 VIM_Web 和证书使用 `packages/deploy/` 目录下的文件
 
 ### 4. 执行安装
 
@@ -81,6 +94,22 @@ chmod +x install.sh scripts/*.sh lib/*.sh
 
 # 或直接执行升级
 ./install.sh --upgrade
+```
+
+## 主菜单
+
+```
+╔════════════════════════════════════════════════════════════╗
+║         Linux 服务器安装部署服务 v1.0.0               ║
+╠════════════════════════════════════════════════════════════╣
+║    1. 新部署安装                                         ║
+║    2. 升级安装                                           ║
+║    3. 检查服务状态                                       ║
+║    4. 查看可用安装包                                     ║
+║    5. 数据库内外网配置                                   ║
+║    6. 初始化目录结构                                     ║
+║    0. 退出                                               ║
+╚════════════════════════════════════════════════════════════╝
 ```
 
 ## 命令行参数
@@ -98,59 +127,68 @@ chmod +x install.sh scripts/*.sh lib/*.sh
 
 ### 包名匹配规则
 
-由于安装包文件名包含版本号，脚本使用模糊匹配来查找安装包：
-
-1. **前缀匹配**：根据包名前缀查找匹配的文件
-2. **版本排序**：当存在多个版本时，自动选择最新版本
-3. **时间兜底**：如果版本号无法解析，使用文件修改时间排序
+- **前缀匹配**：根据包名前缀查找匹配的文件
+- **版本排序**：当存在多个版本时，自动选择最新版本
+- **时间显示**：查看包时显示文件修改时间，方便确认版本
 
 ### 安装参数
 
 | 安装包类型 | 额外参数 |
-|-----------|---------|
+|-----------|---------| 
 | `install-lkdc-*.bin` | `--prefix=/home` |
 | `install_hy_message_push_server_*.bin` | `hy` |
 | `install_hy_file_server_*.bin` | `hy` |
+
+## 证书和 Nginx 配置
+
+新部署时自动部署以下文件（可选，不影响主流程）：
+
+| 文件 | 目标目录 |
+|------|---------|
+| `nginx.conf` | `/opt/nginx/conf/` |
+| `server.crt`, `server.key` | `/opt/nginx/conf/`、`/home/hy_media_server/bin/` |
+| `root.crt` | 上述目录 + `/home/hy_vss_biz_server/conf/` |
+
+同时在 `/opt/nginx/conf/` 创建 `ssl_password_file` 文件。
+
+## 数据库内外网配置
+
+选择菜单 **5. 数据库内外网配置** 可配置：
+
+- 公网/内网 IP 地址
+- MTN、PUNCH、SIE、PROXY 等端口
+- 自动更新相关数据库表
 
 ## 服务检查
 
 安装完成后，脚本会自动检查以下服务状态：
 
 | 服务 | 检查命令 |
-|------|---------|
+|------|---------| 
 | SIE | `service sie status` |
 | VSS | `service vss status` |
 | LKDC | `service lkdc status` |
+| Nginx | `service nginxd status` |
 | 消息推送 | `service hy_message_push_server status` |
 | 文件服务 | `service hy_file_server status` |
 
-## 数据库导入
+## 配置文件
 
-新部署安装完成后，脚本会自动导入数据库脚本：
+所有配置集中在 `config.sh`：
 
-- **脚本文件**：`packages/deploy/sdedb.sql`
-- **目标数据库**：`sdedb`
-- **导入后操作**：自动重启 SIE 和 VSS 服务
-
-> **注意**：数据库密码配置在 `config.sh` 中的 `MYSQL_PASSWORD` 变量
+- 目录路径配置
+- MySQL 数据库配置
+- Nginx 和证书配置
+- 服务列表配置
+- 安装顺序配置
+- 网络端口默认值
 
 ## 注意事项
 
 - ⚠️ 此脚本需要 **root 权限** 运行
+- ⚠️ 升级时可选择升级特定服务，无需全部升级
 - ⚠️ 升级安装包自带自动备份功能，无需手动备份
-- ⚠️ `install` 系列安装包可能需要交互操作（如确认覆盖），请注意屏幕提示
-
-## 配置修改
-
-如需修改安装参数，请编辑 `config.sh` 文件：
-
-```bash
-# LKDC 安装前缀
-LKDC_PREFIX="/home"
-
-# 消息推送和文件服务安装参数
-HY_SERVICE_PARAM="hy"
-```
+- ⚠️ 证书和 nginx.conf 为可选文件，不影响主安装流程
 
 ## 日志
 
