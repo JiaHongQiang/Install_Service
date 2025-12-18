@@ -236,7 +236,93 @@ run_deploy() {
     print_title "最终服务状态检查"
     check_deploy_services
     
+    # 询问是否配置防火墙
+    print_separator
+    configure_firewall_after_deploy
+    
     return $failed
+}
+
+# 部署后配置防火墙
+configure_firewall_after_deploy() {
+    print_title "防火墙配置"
+    
+    log_info "新部署服务需要开放以下端口："
+    echo ""
+    echo -e "${CYAN}TCP 端口:${NC}"
+    echo -e "  ${GREEN}1443${NC}  - HTTPS 代理端口"
+    echo -e "  ${GREEN}9003${NC}  - TLS 代理端口"
+    echo -e "  ${GREEN}9012${NC}  - MTN NAT 端口"
+    echo -e "  ${GREEN}9200${NC}  - HTTP 代理端口"
+    echo -e "  ${GREEN}22${NC}    - SSH 端口"
+    echo ""
+    echo -e "${CYAN}UDP 端口:${NC}"
+    echo -e "  ${GREEN}9500${NC}  - MTN Video NAT 端口"
+    echo -e "  ${GREEN}9501${NC}  - MTN Audio NAT 端口"
+    echo -e "  ${GREEN}9009${NC}  - Punch 端口"
+    echo -e "  ${GREEN}9001${NC}  - SIE NAT 端口"
+    echo ""
+    
+    echo -e "${YELLOW}防火墙配置命令:${NC}"
+    echo -e "  FW_SERVICES_EXT_TCP=\"1443 9003 9012 9200 22\""
+    echo -e "  FW_SERVICES_EXT_UDP=\"9500 9501 9009 9001\""
+    echo ""
+    
+    if confirm "是否自动配置防火墙开放这些端口？"; then
+        log_info "正在配置防火墙..."
+        
+        # 检查防火墙服务
+        if ! systemctl is-active --quiet SuSEfirewall2; then
+            log_warn "SuSEfirewall2 服务未运行，正在启动..."
+            systemctl start SuSEfirewall2
+        fi
+        
+        # 备份防火墙配置
+        local backup_dir="/etc/sysconfig/backup_$(date +%Y%m%d_%H%M%S)"
+        mkdir -p "$backup_dir"
+        cp /etc/sysconfig/SuSEfirewall2 "$backup_dir/" 2>/dev/null
+        log_info "防火墙配置已备份到: $backup_dir"
+        
+        # 配置TCP端口
+        local tcp_ports="1443 9003 9012 9200 22"
+        local current_tcp=$(grep "^FW_SERVICES_EXT_TCP=" /etc/sysconfig/SuSEfirewall2 | cut -d'"' -f2)
+        for port in $tcp_ports; do
+            if ! echo "$current_tcp" | grep -qw "$port"; then
+                current_tcp="${current_tcp:+$current_tcp }$port"
+            fi
+        done
+        sed -i "s/^FW_SERVICES_EXT_TCP=.*/FW_SERVICES_EXT_TCP=\"$current_tcp\"/" /etc/sysconfig/SuSEfirewall2
+        log_success "TCP端口配置完成: $tcp_ports"
+        
+        # 配置UDP端口
+        local udp_ports="9500 9501 9009 9001"
+        local current_udp=$(grep "^FW_SERVICES_EXT_UDP=" /etc/sysconfig/SuSEfirewall2 | cut -d'"' -f2)
+        for port in $udp_ports; do
+            if ! echo "$current_udp" | grep -qw "$port"; then
+                current_udp="${current_udp:+$current_udp }$port"
+            fi
+        done
+        sed -i "s/^FW_SERVICES_EXT_UDP=.*/FW_SERVICES_EXT_UDP=\"$current_udp\"/" /etc/sysconfig/SuSEfirewall2
+        log_success "UDP端口配置完成: $udp_ports"
+        
+        # 重载防火墙
+        log_info "重载防火墙配置..."
+        systemctl restart SuSEfirewall2
+        
+        if systemctl is-active --quiet SuSEfirewall2; then
+            log_success "防火墙配置完成！"
+            
+            # 显示当前开放的端口
+            echo ""
+            log_info "当前开放的端口:"
+            echo -e "${CYAN}TCP:${NC} $(grep "^FW_SERVICES_EXT_TCP=" /etc/sysconfig/SuSEfirewall2 | cut -d'"' -f2)"
+            echo -e "${CYAN}UDP:${NC} $(grep "^FW_SERVICES_EXT_UDP=" /etc/sysconfig/SuSEfirewall2 | cut -d'"' -f2)"
+        else
+            log_error "防火墙重载失败，请手动检查"
+        fi
+    else
+        log_info "跳过防火墙配置，您可以稍后通过菜单选项 6 手动配置"
+    fi
 }
 
 # 主函数
