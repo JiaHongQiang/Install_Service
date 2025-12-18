@@ -58,7 +58,8 @@ show_menu() {
     echo -e "${CYAN}║${NC}    ${YELLOW}3.${NC} 检查服务状态                                       ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}    ${YELLOW}4.${NC} 查看可用安装包                                     ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}    ${YELLOW}5.${NC} 数据库内外网配置                                   ${CYAN}║${NC}"
-    echo -e "${CYAN}║${NC}    ${YELLOW}6.${NC} 初始化目录结构                                     ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}    ${YELLOW}6.${NC} 防火墙端口管理                                     ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}    ${YELLOW}7.${NC} 初始化目录结构                                     ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}    ${YELLOW}0.${NC} 退出                                               ${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}                                                            ${CYAN}║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -96,6 +97,12 @@ do_deploy_upgrade() {
 do_config_network() {
     source "$PROJECT_ROOT/scripts/config_network.sh"
     configure_network
+}
+
+# 执行防火墙配置
+do_config_firewall() {
+    source "$PROJECT_ROOT/scripts/config_firewall.sh"
+    firewall_menu
 }
 
 # 检查环境
@@ -152,7 +159,7 @@ do_init_directories() {
 run_menu() {
     while true; do
         show_menu
-        echo -n "请选择操作 [0-6]: "
+        echo -n "请选择操作 [0-7]: "
         read -r choice
         
         case "$choice" in
@@ -177,6 +184,9 @@ run_menu() {
                 press_any_key
                 ;;
             6)
+                do_config_firewall
+                ;;
+            7)
                 do_init_directories
                 press_any_key
                 ;;
